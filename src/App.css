@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+body{
+    @apply bg-[#232323];
+    @apply text-[#f9f9f9];
+    font-family: 'Poppins', sans-serif;
+}
+
+li{
+    cursor: pointer;
+}
+
+li:hover{
+    @apply text-[#b0b0b0];
+}
