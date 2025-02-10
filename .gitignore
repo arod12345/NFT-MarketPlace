@@ -29,6 +29,7 @@ node_modules
 # Hardhat files
 backend/cache
 backend/artifacts
+backend/ignition/deployments
 
 # TypeChain files
 /typechain

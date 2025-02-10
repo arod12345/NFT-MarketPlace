@@ -8,6 +8,10 @@ module.exports = {
     cache: "./backend/cache",
     sources: "./backend/contracts",
     tests: "./backend/test",
+    ignition:"./backend/ignition"
+  },
+  ignition:{
+    modulePath: "backend/ignition/modules",
   },
   defaultNetwork: "localhost",
 };
