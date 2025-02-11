@@ -3,8 +3,8 @@ import Spinner from "../components/Spinner";
 import { useContext, useState, useEffect } from "react";
 import AppContext from "../context/Context";
 import { ethers } from "ethers";
-import { createHelia } from "helia";
-import { json } from "@helia/json";
+import pinata from "../utils/pinata";
+import { toast } from "react-toastify";
 
 const CreateNFT = () => {
   const {
@@ -19,39 +19,22 @@ const CreateNFT = () => {
   const [NFTData, setNFTData] = useState({
     name: "",
     description: "",
-    image: "",
     price: "",
-    quantity: "",
-    owner: "",
-    address: "",
   });
-  const [helia, setHelia] = useState(null);
 
-  // Initialize Helia on component mount.
-  useEffect(() => {
-    async function initHelia() {
-      try {
-        const node = await createHelia();
-        setHelia(node);
-      } catch (error) {
-        console.error("Failed to initialize Helia:", error);
-      }
-    }
-    initHelia();
-  }, []);
-
-  // Create NFT: upload JSON metadata (using the generated image) then mint and list the NFT.
   const createNFT = async () => {
+    console.log("createNFT called", { generatedImage, NFTData, account });
+
     if (
       !generatedImage ||
       !NFTData.price ||
       !NFTData.name ||
       !NFTData.description ||
-      !helia
+      !account
     )
       return;
+
     try {
-      const j = json(helia);
       const metadata = {
         image: generatedImage,
         price: NFTData.price,
@@ -59,10 +42,27 @@ const CreateNFT = () => {
         description: NFTData.description,
         owner: account,
       };
-      const result = await j.add(metadata);
+
+      // const blob = new Blob([JSON.stringify(metadata)], {
+      //   type: "application/json",
+      // });
+      const file = new File(
+        [JSON.stringify(metadata)],
+        `${metadata.name}.json`,
+        {
+          type: "application/json",
+        }
+      );
+
+      const upload = await pinata.upload.file(file);
+      console.log(upload);
+
+      const result = upload.IpfsHash;
       mintThenList(result);
+
+      setNFTData({ name: "", description: "", price: "" });
     } catch (error) {
-      console.error("Helia metadata upload error:", error);
+      console.error("Pinata metadata upload error:", error);
     }
   };
 
@@ -72,26 +72,78 @@ const CreateNFT = () => {
       return;
     }
     console.log("NFT Contract in mintThenList:", nft); // Log the nft object
-    const uri = `https://ipfs.io/ipfs/${result.toString()}`;
+    const uri = `https://rose-capitalist-turtle-614.mypinata.cloud/ipfs/${result.toString()}`;
+    const toastId = toast.loading("Minting NFT...");
+
     try {
-      console.log("Minting NFT with URI:", uri);
-      const tx = await nft.mint(uri);
-      await tx.wait();
-      console.log("NFT minted successfully");
+      // 1. Verify contract instances
+      console.log("NFT Contract Address:", nft.target);
+      console.log("Marketplace Address:", marketplace.target);
 
-      const id = await nft.tokenCount();
-      console.log("Token ID:", id.toString());
+      // 2. Get initial token count
+      const initialTokenCount = await nft.tokenCount();
+      // console.log("Initial Token Count:", initialTokenCount.toString());
 
-      console.log("Approving marketplace...");
-      await (await nft.setApprovalForAll(marketplace.address, true)).wait();
-      console.log("Marketplace approved");
+      // 3. Mint with detailed logging
+      console.log("Minting with URI:", uri);
+      const mintTx = await nft.mint(uri, { gasLimit: 300000 });
+      toast.update(toastId, {
+        render: `Mint transaction sent:${mintTx.hash}`,
+        type: "info",
+        isLoading: false,
+        autoClose: 1000,
+      });
+      // console.log("Mint transaction sent:", mintTx.hash);
 
-      const listingPrice = ethers.utils.parseEther(NFTData.price.toString());
-      console.log("Listing NFT on marketplace...");
-      await (await marketplace.makeItem(nft.address, id, listingPrice)).wait();
-      console.log("NFT listed successfully");
+      // const mintReceipt = await mintTx.wait();
+      // console.log("Mint successful. Block:", mintReceipt.blockNumber);
+
+      // 4. Get new token ID
+      const newTokenCount = initialTokenCount + 1n;
+      const id = newTokenCount; // Assuming tokenCount increments after mint
+      // console.log("New Token ID:", id.toString());
+
+      // 5. Verify ownership
+      // const owner = await nft.ownerOf(id);
+      // // console.log("NFT Owner:", owner);
+      // // console.log("Current Account:", account);
+
+      // 6. Approve marketplace
+      const approveTx = await nft.approve(marketplace.target, id, {
+        gasLimit: 300000,
+      });
+
+      console.log("Approve transaction:", approveTx.hash);
+      await approveTx.wait();
+
+      // 7. Prepare listing price
+      const listingPrice = ethers.parseEther(NFTData.price.toString());
+      console.log("Listing Price (ETH):", NFTData.price);
+      console.log("Listing Price (wei):", listingPrice.toString());
+
+      const toastId1 = toast.loading("Listing NFT:...");
+      // 8. List item with explicit parameters
+      const listTx = await marketplace.makeItem(nft.target, id, listingPrice, {
+        gasLimit: 300000,
+      });
+      console.log("List transaction:", listTx.hash);
+      await listTx.wait();
+
+      toast.update(toastId1, {
+        render: `NFT successfully listed:${listTx.hash}`,
+        type: "success",
+        isLoading: false,
+        autoClose: 5000,
+      });
+      console.log("NFT successfully listed!");
     } catch (error) {
-      console.error("Error in minting or listing NFT:", error);
+      console.error("Full error details:", {
+        error,
+        message: error.message,
+        code: error.code,
+        reason: error.reason,
+        data: error.data,
+      });
     }
   };
 
@@ -133,25 +185,14 @@ const CreateNFT = () => {
               name="Price"
               type="number"
               placeholder="Enter NFT price"
-              className="border-[.1px] border-[#ffffff30] mb-4 p-2 rounded"
+              className="border-[.1px] border-[#ffffff30] mb-8 p-2 rounded"
               required
               value={NFTData.price}
               onChange={(e) =>
                 setNFTData({ ...NFTData, price: e.target.value })
               }
             />
-            <input
-              id="quantity"
-              name="quantity"
-              type="number"
-              placeholder="Enter NFT quantity"
-              className="border-[.1px] border-[#ffffff30] mb-4 p-2 rounded"
-              required
-              value={NFTData.quantity}
-              onChange={(e) =>
-                setNFTData({ ...NFTData, quantity: e.target.value })
-              }
-            />
+
             <div className="flex border-[.1px] border-[#ffffff30] relative rounded p-6 items-center justify-between">
               <label
                 htmlFor="prompt"

@@ -1,6 +1,7 @@
 import { createContext, useState } from "react";
 import axios from "axios";
 import { ethers } from "ethers";
+import { toast } from "react-toastify";
 
 import MarketplaceAbi from "../contractsData/Marketplace.json";
 import MarketplaceAddress from "../contractsData/Marketplace-address.json";
@@ -24,7 +25,7 @@ export const AppProvider = ({ children }) => {
 
     const provider = new ethers.BrowserProvider(window.ethereum);
 
-    const signer =await provider.getSigner();
+    const signer = await provider.getSigner();
 
     window.ethereum.on("chainChanged", (chainId) => {
       window.location.reload();
@@ -34,6 +35,9 @@ export const AppProvider = ({ children }) => {
       setAccount(accounts[0]);
       await web3Handler();
     });
+
+    console.log("Provider Network:", await provider.getNetwork());
+
     loadContracts(signer);
   };
 
@@ -46,8 +50,18 @@ export const AppProvider = ({ children }) => {
     );
     setMarketplace(marketplace);
     const nft = new ethers.Contract(NFTAddress.address, NFTAbi.abi, signer);
+    console.log("NFT contract methods:", Object.keys(nft));
+
     setNFT(nft);
     setLoading(false);
+
+    console.log("Marketplace Contract:", marketplace);
+    console.log("Marketplace Address:", MarketplaceAddress.address);
+
+    const count = await marketplace.itemCount();
+    console.log(count.toString());
+    console.log("NFT Contract:", nft);
+    console.log("Signer Address:", await signer.getAddress());
   };
 
   const fetchGeneratedImages = async (prompt) => {
@@ -62,13 +76,19 @@ export const AppProvider = ({ children }) => {
           "x-rapidapi-host": import.meta.env.VITE_HOST_DATA,
           "Content-Type": "application/json",
         },
-        data: { prompt, image_size: "portrait_16_9" },
+        data: {
+          text: prompt,
+          width: 512,
+          height: 512,
+          steps: 1,
+        },
       });
-
-      setGeneratedImage(response.data?.url);
+      
+      setGeneratedImage(response.data?.generated_image);
     } catch (error) {
       console.error("Error fetching image:", error);
     }
+    toast.success("Image Generated Successfully");
     setLoading(false); // Stop loading
   };
 
