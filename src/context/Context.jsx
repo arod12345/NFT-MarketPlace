@@ -78,12 +78,14 @@ export const AppProvider = ({ children }) => {
         },
         data: {
           text: prompt,
-          width: 512,
-          height: 512,
-          steps: 1,
+          style_id: 2,
+          size: "1-1",
+          // width: 512,
+          // height: 512,
+          // steps: 1,
         },
       });
-      
+
       setGeneratedImage(response.data?.generated_image);
     } catch (error) {
       console.error("Error fetching image:", error);

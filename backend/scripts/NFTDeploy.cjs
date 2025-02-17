@@ -12,8 +12,8 @@ async function main() {
   const deployed = await ignition.deploy(NFTMarketplaceModule);
 
   console.log(`✅ Contracts Deployed!
-    📌 NFT Address: ${deployed.nft.target}
-    📌 Marketplace Address: ${deployed.marketplace.target}
+    📌 NFT Address: https://sepolia.etherscan.io/address/${deployed.nft.target}
+    📌 Marketplace Address: https://sepolia.etherscan.io/address/${deployed.marketplace.target}
   `);
 
   // Save frontend artifacts

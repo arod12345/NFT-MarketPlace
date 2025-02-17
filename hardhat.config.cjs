@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -8,10 +9,17 @@ module.exports = {
     cache: "./backend/cache",
     sources: "./backend/contracts",
     tests: "./backend/test",
-    ignition:"./backend/ignition"
+    ignition: "./backend/ignition",
   },
-  ignition:{
+  ignition: {
     modulePath: "backend/ignition/modules",
+  },
+  networks: {
+    sepolia: {
+      url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMEY_API_KEY}`,
+      accounts: [`${process.env.PRIVATE_KEY}`],
+      chainId: 11155111,
+    },
   },
   defaultNetwork: "localhost",
 };

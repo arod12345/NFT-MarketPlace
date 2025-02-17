@@ -11,6 +11,8 @@ const Home = () => {
   const [items, setItems] = useState([]);
 
   const loadMarketplaceItems = async () => {
+
+    console.log("MARKET",marketplace)
     // Load all unsold items
     const itemCount = await marketplace.itemCount();
     let items = [];
@@ -19,6 +21,7 @@ const Home = () => {
       if (!item.sold) {
         // get uri url from nft contract
         const uri = await nft.tokenURI(item.tokenId);
+        console.log("URI",uri);
         // use uri to fetch the nft metadata stored on ipfs
         const response = await fetch(uri);
         const metadata = await response.json();
@@ -51,16 +54,15 @@ const Home = () => {
   };
 
   useEffect(() => {
-    // if (marketplace?.itemCount) {
-    // Ensure marketplace is initialized
-    loadMarketplaceItems();
-    // }
-  }, []);
+    if (marketplace) {
+      loadMarketplaceItems();
+    }
+  }, [marketplace]);
 
   return (
     <div className="w-full h-full flex items-center justify-between flex-col">
       <Navbar />
-      <div className="w-full p-8 h-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 place-items-center gap-y-2.5 gap-x-2.5">
+      <div className="w-full p-8 h-screen grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 place-items-center gap-y-2.5 gap-x-2.5">
         {items.map((item, idx) => {
           // loading ? (
           //   <Spinner />

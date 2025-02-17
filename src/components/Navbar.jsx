@@ -12,7 +12,7 @@ const Navbar = () => {
         <img
           src="/logo.png"
           alt="logo"
-          className="w-24 h-12 object-cover rounded-md shadow-md shadow-[#dddddd30]"
+          className="w-20 h-10 object-cover rounded-md shadow-md shadow-[#dddddd30]"
         />
       </Link>
 

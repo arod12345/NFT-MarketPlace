@@ -81,12 +81,12 @@ const CreateNFT = () => {
       console.log("Marketplace Address:", marketplace.target);
 
       // 2. Get initial token count
-      const initialTokenCount = await nft.tokenCount();
+      // const initialTokenCount = await nft.tokenCount();
       // console.log("Initial Token Count:", initialTokenCount.toString());
 
       // 3. Mint with detailed logging
       console.log("Minting with URI:", uri);
-      const mintTx = await nft.mint(uri, { gasLimit: 300000 });
+      const mintTx = await nft.mint(uri);
       toast.update(toastId, {
         render: `Mint transaction sent:${mintTx.hash}`,
         type: "info",
@@ -99,8 +99,8 @@ const CreateNFT = () => {
       // console.log("Mint successful. Block:", mintReceipt.blockNumber);
 
       // 4. Get new token ID
-      const newTokenCount = initialTokenCount + 1n;
-      const id = newTokenCount; // Assuming tokenCount increments after mint
+      // / const newTokenCount = initialTokenCount + 1n;
+      const id = await nft.tokenCount(); // Assuming tokenCount increments after mint
       // console.log("New Token ID:", id.toString());
 
       // 5. Verify ownership
@@ -109,9 +109,7 @@ const CreateNFT = () => {
       // // console.log("Current Account:", account);
 
       // 6. Approve marketplace
-      const approveTx = await nft.approve(marketplace.target, id, {
-        gasLimit: 300000,
-      });
+      const approveTx = await nft.setApprovalForAll(marketplace.target, true);
 
       console.log("Approve transaction:", approveTx.hash);
       await approveTx.wait();
@@ -123,9 +121,7 @@ const CreateNFT = () => {
 
       const toastId1 = toast.loading("Listing NFT:...");
       // 8. List item with explicit parameters
-      const listTx = await marketplace.makeItem(nft.target, id, listingPrice, {
-        gasLimit: 300000,
-      });
+      const listTx = await marketplace.makeItem(nft.target, id, listingPrice);
       console.log("List transaction:", listTx.hash);
       await listTx.wait();
 
