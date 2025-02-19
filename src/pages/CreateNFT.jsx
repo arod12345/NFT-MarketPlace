@@ -1,10 +1,12 @@
 import Navbar from "../components/Navbar";
 import Spinner from "../components/Spinner";
-import { useContext, useState, useEffect } from "react";
+import Error from "../components/Error";
+import { useContext, useState } from "react";
 import AppContext from "../context/Context";
 import { ethers } from "ethers";
 import pinata from "../utils/pinata";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const CreateNFT = () => {
   const {
@@ -21,145 +23,131 @@ const CreateNFT = () => {
     description: "",
     price: "",
   });
+  const navigate = useNavigate();
+
+  const validateInputs = () => {
+    return (
+      generatedImage &&
+      NFTData.price &&
+      NFTData.name &&
+      NFTData.description &&
+      account &&
+      ethers.parseEther(NFTData.price) > 0
+    );
+  };
 
   const createNFT = async () => {
-    console.log("createNFT called", { generatedImage, NFTData, account });
-
-    if (
-      !generatedImage ||
-      !NFTData.price ||
-      !NFTData.name ||
-      !NFTData.description ||
-      !account
-    )
+    if (!validateInputs()) {
+      toast.error(
+        "Please fill all required fields with valid values or Connect MetaMask Account"
+      );
       return;
+    }
 
     try {
       const metadata = {
         image: generatedImage,
-        price: NFTData.price,
         name: NFTData.name,
         description: NFTData.description,
+        price: NFTData.price,
         owner: account,
       };
 
-      // const blob = new Blob([JSON.stringify(metadata)], {
-      //   type: "application/json",
-      // });
       const file = new File(
         [JSON.stringify(metadata)],
         `${metadata.name}.json`,
-        {
-          type: "application/json",
-        }
+        { type: "application/json" }
       );
 
       const upload = await pinata.upload.file(file);
-      console.log(upload);
+      const metadataURI = `https://rose-capitalist-turtle-614.mypinata.cloud/ipfs/${upload.IpfsHash}`;
 
-      const result = upload.IpfsHash;
-      mintThenList(result);
-
+      await mintThenList(metadataURI);
       setNFTData({ name: "", description: "", price: "" });
     } catch (error) {
-      console.error("Pinata metadata upload error:", error);
+      console.error("NFT creation error:", error);
+      toast.error(`NFT creation failed: ${error.message}`);
     }
   };
 
-  const mintThenList = async (result) => {
-    if (!nft) {
-      console.error("NFT contract not initialized");
-      return;
+  const mintThenList = async (metadataURI) => {
+    if (!nft || !marketplace) {
+      throw new Error("Contracts not initialized");
     }
-    console.log("NFT Contract in mintThenList:", nft); // Log the nft object
-    const uri = `https://rose-capitalist-turtle-614.mypinata.cloud/ipfs/${result.toString()}`;
-    const toastId = toast.loading("Minting NFT...");
+
+    const toastId = toast.loading("Starting NFT creation process...");
 
     try {
-      // 1. Verify contract instances
-      console.log("NFT Contract Address:", nft.target);
-      console.log("Marketplace Address:", marketplace.target);
+      // 1. Mint NFT
+      toast.update(toastId, { render: "Minting NFT..." });
+      const mintTx = await nft.mint(metadataURI);
+      const mintReceipt = await mintTx.wait();
 
-      // 2. Get initial token count
-      // const initialTokenCount = await nft.tokenCount();
-      // console.log("Initial Token Count:", initialTokenCount.toString());
+      // Extract token ID from mint event
+      const mintEvent = mintReceipt.logs.find(
+        (log) => log.fragment?.name === "Transfer"
+      );
+      const tokenId = mintEvent.args[2].toString();
 
-      // 3. Mint with detailed logging
-      console.log("Minting with URI:", uri);
-      const mintTx = await nft.mint(uri);
-      toast.update(toastId, {
-        render: `Mint transaction sent:${mintTx.hash}`,
-        type: "info",
-        isLoading: false,
-        autoClose: 1000,
-      });
-      // console.log("Mint transaction sent:", mintTx.hash);
-
-      // const mintReceipt = await mintTx.wait();
-      // console.log("Mint successful. Block:", mintReceipt.blockNumber);
-
-      // 4. Get new token ID
-      // / const newTokenCount = initialTokenCount + 1n;
-      const id = await nft.tokenCount(); // Assuming tokenCount increments after mint
-      // console.log("New Token ID:", id.toString());
-
-      // 5. Verify ownership
-      // const owner = await nft.ownerOf(id);
-      // // console.log("NFT Owner:", owner);
-      // // console.log("Current Account:", account);
-
-      // 6. Approve marketplace
-      const approveTx = await nft.setApprovalForAll(marketplace.target, true);
-
-      console.log("Approve transaction:", approveTx.hash);
+      // 2. Approve Marketplace for specific token
+      toast.update(toastId, { render: "Approving Marketplace..." });
+      const approveTx = await nft.approve(marketplace.target, tokenId);
       await approveTx.wait();
 
-      // 7. Prepare listing price
+      // 3. List Item
+      toast.update(toastId, { render: "Listing NFT..." });
       const listingPrice = ethers.parseEther(NFTData.price.toString());
-      console.log("Listing Price (ETH):", NFTData.price);
-      console.log("Listing Price (wei):", listingPrice.toString());
-
-      const toastId1 = toast.loading("Listing NFT:...");
-      // 8. List item with explicit parameters
-      const listTx = await marketplace.makeItem(nft.target, id, listingPrice);
-      console.log("List transaction:", listTx.hash);
+      const listTx = await marketplace.makeItem(
+        nft.target,
+        tokenId,
+        listingPrice
+      );
       await listTx.wait();
 
-      toast.update(toastId1, {
-        render: `NFT successfully listed:${listTx.hash}`,
+      toast.update(toastId, {
+        render: "NFT Created & Listed Successfully!",
         type: "success",
         isLoading: false,
         autoClose: 5000,
       });
-      console.log("NFT successfully listed!");
+      navigate(`/nft/${tokenId}`);
     } catch (error) {
-      console.error("Full error details:", {
+      console.error("Transaction error:", {
         error,
         message: error.message,
-        code: error.code,
-        reason: error.reason,
         data: error.data,
       });
+      toast.update(toastId, {
+        render: `Transaction failed: ${error.reason || error.message}`,
+        type: "error",
+        isLoading: false,
+        autoClose: 5000,
+      });
+      throw error;
     }
   };
 
+  if (!account) {
+    return (
+      <Error message="Please connect your wallet to view marketplace items" />
+    );
+  }
+
   return (
-    <div className="w-full h-screen flex items-center justify-between flex-col pb-16">
+    <div className="w-full min-h-screen flex flex-col items-center justify-between pb-16">
       <Navbar />
-      <div className="w-full p-8 h-full flex flex-col items-center justify-center">
-        <div className="flex items-center justify-between w-[80%] h-full p-8 border-[.1px] border-[#ffffff30] rounded-lg shadow-lg">
+      <div className="w-full p-4 md:p-8 flex flex-col items-center justify-center">
+        <div className="flex flex-col md:flex-row items-center justify-between w-full md:w-[80%] p-4 md:p-8 border-[.1px] border-[#ffffff30] rounded-lg shadow-lg gap-4">
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-            }}
-            className="flex p-2 mb-4 rounded w-[55%] flex-col"
+            onSubmit={(e) => e.preventDefault()}
+            className="flex p-2 mb-4 rounded w-full md:w-[55%] flex-col"
           >
             <input
               id="NFT Name"
               name="name"
               type="text"
               placeholder="Enter NFT Name"
-              className="border-[.1px] border-[#ffffff30] mb-4 p-2 rounded"
+              className="border-[.1px] border-[#ffffff30] mb-4 p-2 rounded w-full"
               required
               value={NFTData.name}
               onChange={(e) => setNFTData({ ...NFTData, name: e.target.value })}
@@ -167,9 +155,8 @@ const CreateNFT = () => {
             <textarea
               id="description"
               name="description"
-              type="text"
               placeholder="Enter NFT description"
-              className="border-[.1px] border-[#ffffff30] mb-4 p-2 rounded"
+              className="border-[.1px] border-[#ffffff30] mb-4 p-2 rounded w-full"
               required
               value={NFTData.description}
               onChange={(e) =>
@@ -181,7 +168,7 @@ const CreateNFT = () => {
               name="Price"
               type="number"
               placeholder="Enter NFT price"
-              className="border-[.1px] border-[#ffffff30] mb-8 p-2 rounded"
+              className="border-[.1px] border-[#ffffff30] mb-8 p-2 rounded w-full"
               required
               value={NFTData.price}
               onChange={(e) =>
@@ -189,7 +176,7 @@ const CreateNFT = () => {
               }
             />
 
-            <div className="flex border-[.1px] border-[#ffffff30] relative rounded p-6 items-center justify-between">
+            <div className="flex flex-col md:flex-row border-[.1px] border-[#ffffff30] relative rounded p-6 items-center gap-2 md:gap-4">
               <label
                 htmlFor="prompt"
                 className="text-white text-[12px] absolute top-[-10px] bg-[#131313] px-2"
@@ -202,12 +189,12 @@ const CreateNFT = () => {
                 onChange={(e) => setPromptData(e.target.value)}
                 type="text"
                 value={promptData}
-                placeholder="Enter a prompt to generate an image for your NFT"
-                className="p-2 h-[4em] focus:border-red-300 w-[75%]"
+                placeholder="Enter a prompt to the AI and generate an image for your NFT"
+                className="p-2 h-[4em] focus:border-red-300 w-full md:w-[75%]"
                 required
               ></textarea>
               <button
-                className="p-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+                className="p-2 bg-blue-500 text-white rounded disabled:bg-gray-400 w-full md:w-auto"
                 disabled={loading}
                 onClick={() => fetchGeneratedImages(promptData)}
               >
@@ -215,23 +202,30 @@ const CreateNFT = () => {
               </button>
             </div>
             <button
-              className="p-2 mt-4 bg-blue-500 text-white rounded cursor-pointer disabled:bg-gray-400"
+              className="p-2 mt-4 bg-blue-500 text-white rounded cursor-pointer disabled:bg-gray-400 w-full"
               disabled={loading}
               onClick={createNFT}
             >
               Create NFT
             </button>
           </form>
+
           {/* Loader / Generated Image Section */}
-          <div className="flex flex-col">
+          <div className="flex flex-col w-full md:w-[40%]">
             {loading && <Spinner text="Generating image..." />}
             {generatedImage && !loading && (
-              <div className="w-[24rem] h-[24rem] flex items-center justify-center rounded bg-[#ffffff10] border-[.1px] shadow-lg shadow-[#ffffff10] border-[#ffffff20]">
-                <img
-                  src={generatedImage}
-                  alt="Generated NFT"
-                  className="w-auto h-auto max-w-full max-h-full"
-                />
+              <div className="w-full h-[20rem] flex items-center justify-center rounded bg-[#ffffff10] border-[.1px] shadow-lg shadow-[#ffffff10] border-[#ffffff20]">
+                {!generatedImage ? (
+                  <h1 className="text-white font-bold w-full h-full text-center">
+                    Generated Image will appear here
+                  </h1>
+                ) : (
+                  <img
+                    src={generatedImage}
+                    alt="Generated NFT"
+                    className="w-auto h-auto max-w-full max-h-full"
+                  />
+                )}
               </div>
             )}
           </div>

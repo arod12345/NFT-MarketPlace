@@ -36,8 +36,6 @@ export const AppProvider = ({ children }) => {
       await web3Handler();
     });
 
-    console.log("Provider Network:", await provider.getNetwork());
-
     loadContracts(signer);
   };
 
@@ -50,18 +48,9 @@ export const AppProvider = ({ children }) => {
     );
     setMarketplace(marketplace);
     const nft = new ethers.Contract(NFTAddress.address, NFTAbi.abi, signer);
-    console.log("NFT contract methods:", Object.keys(nft));
 
     setNFT(nft);
     setLoading(false);
-
-    console.log("Marketplace Contract:", marketplace);
-    console.log("Marketplace Address:", MarketplaceAddress.address);
-
-    const count = await marketplace.itemCount();
-    console.log(count.toString());
-    console.log("NFT Contract:", nft);
-    console.log("Signer Address:", await signer.getAddress());
   };
 
   const fetchGeneratedImages = async (prompt) => {
@@ -77,7 +66,7 @@ export const AppProvider = ({ children }) => {
           "Content-Type": "application/json",
         },
         data: {
-          text: prompt,
+          prompt: prompt,
           style_id: 2,
           size: "1-1",
           // width: 512,
@@ -85,12 +74,12 @@ export const AppProvider = ({ children }) => {
           // steps: 1,
         },
       });
-
-      setGeneratedImage(response.data?.generated_image);
+      setGeneratedImage(response.data?.final_result[0].origin);
+      toast.success("Image Generated Successfully");
     } catch (error) {
       console.error("Error fetching image:", error);
+      toast.error("Image Genreration failed try again!!");
     }
-    toast.success("Image Generated Successfully");
     setLoading(false); // Stop loading
   };
 
