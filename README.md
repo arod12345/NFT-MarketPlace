@@ -9,7 +9,7 @@ This project is a decentralized NFT Marketplace built on the Ethereum blockchain
 ## Screenshot of the Application
 
 - **Home Page**
-![NFT Marketplace Screenshot](public/screenshot-1.png)
+![NFT Marketplace Screenshot](public/image.png)
 - **NFT details Page**
 ![NFT Marketplace Screenshot](public/screenshot-4.png)
 - **Create NFT page**
