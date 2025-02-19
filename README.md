@@ -1,19 +1,19 @@
 # NFT Marketplace
 
 ## About the Project
+
 By leveraging the use of text to image generation Models we can create a more unique art pieces to be forever memorized in the Blockchain.
 
 This project is a decentralized NFT Marketplace built on the Ethereum blockchain. It allows users to create, list, and purchase NFTs. The significance of this project lies in its ability to provide a platform for artists and collectors to trade digital assets securely and transparently.
 
-
 ## Screenshot of the Application
 
 - **Home Page**
-![NFT Marketplace Screenshot](public/image.png)
+  ![NFT Marketplace Screenshot](public/image.png)
 - **NFT details Page**
-![NFT Marketplace Screenshot](public/screenshot-4.png)
+  ![NFT Marketplace Screenshot](public/screenshot-4.png)
 - **Create NFT page**
-![NFT Marketplace Screenshot](public/screenshot-2.png)
+  ![NFT Marketplace Screenshot](public/screenshot-2.png)
 
 ## List of Technologies Used
 
@@ -26,8 +26,8 @@ This project is a decentralized NFT Marketplace built on the Ethereum blockchain
   - Axios
   - React Toastify
 
-
 - **Blockchain:**
+
   - Solidity
   - Hardhat
   - OpenZeppelin Contracts
@@ -89,17 +89,18 @@ This project is a decentralized NFT Marketplace built on the Ethereum blockchain
 
 ## Things That I Will Implement in the Future
 
-  - Auction System: Implement an auction system for NFTs.
-  - User Profiles: Add user profiles to display owned and created NFTs.
-  - Advanced Search: Enhance the search functionality with filters and sorting options.
-  - Mobile Responsiveness: Improve the mobile responsiveness of the application.
-  - Multi-Chain Support: Add support for multiple blockchain networks.
+- Auction System: Implement an auction system for NFTs.
+- User Profiles: Add user profiles to display owned and created NFTs.
+- Advanced Search: Enhance the search functionality with filters and sorting options.
+- Mobile Responsiveness: Improve the mobile responsiveness of the application.
+- Multi-Chain Support: Add support for multiple blockchain networks.
 
 ## Live Instance of the App
-You can access the live instance of the application .
 
- ```sh
-   
+You can access the live instance of the application [Here](https://nft-market-place-rho-three.vercel.app/).
+
+```sh
+
 Make sure to replace placeholders like `your-api-key`, `your_api_url`, `your_api_key`, `your_host_data`, `your_network`, and `your-live-app-url.com` with actual values specific to your project.
 Make sure to replace placeholders like `your-api-key`, `your_api_url`, `your_api_key`, `your_host_data`, `your_network`, and `your-live-app-url.com` with actual values specific to your project.
- ```
+```
