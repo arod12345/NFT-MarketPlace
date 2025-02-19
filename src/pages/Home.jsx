@@ -40,9 +40,7 @@ const Home = () => {
         });
       }
     }
-
     setItems(items);
-
     setLoading(false);
   };
 

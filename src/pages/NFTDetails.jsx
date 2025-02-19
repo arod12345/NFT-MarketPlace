@@ -14,12 +14,15 @@ const NFTDetails = () => {
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [mintingHash, setMintingHash] = useState(null);
   const navigate = useNavigate();
 
   const loadItemDetails = async () => {
     try {
       setLoading(true);
       setError(null);
+
+      console.log(nft);
 
       if (!marketplace || !nft) {
         throw new Error("Contracts not loaded");
@@ -37,6 +40,14 @@ const NFTDetails = () => {
 
       const owner = await nft.ownerOf(itemData.tokenId);
       const isOwner = metadata.owner.toLowerCase() === account.toLowerCase();
+
+      const transferEvents = await nft.queryFilter(
+        nft.filters.Transfer(null, owner)
+      );
+      if (transferEvents.length > 0) {
+        setMintingHash(transferEvents[0].transactionHash);
+        console.log("Minting Hash:", transferEvents[0].transactionHash);
+      }
 
       setItem({
         ...itemData,
@@ -143,46 +154,56 @@ const NFTDetails = () => {
               <h1 className="text-3xl font-bold">{item.metadata.name}</h1>
               <p className="text-gray-400">{item.metadata.description}</p>
 
-              {/* Price Section */}
-              <div className="bg-[#ffffff10] p-4 rounded-lg">
-                <div className="flex justify-between items-center">
+              <div className="flex flex-col bg-[#ffffff10] p-4 rounded-lg  items-center justify-center">
+                {/* Price Section */}
+                <div className="w-full my-4 flex justify-between items-center">
                   <span className="text-gray-400">Price</span>
                   <span className="text-2xl font-bold">
                     {ethers.formatEther(item.totalPrice)} ETH
                   </span>
                 </div>
-              </div>
 
-              {/* Owner Section */}
-              <div className="bg-[#ffffff10] p-4 rounded-lg">
-                <div className="flex justify-between items-center">
+                {/* Owner Section */}
+                <div className="w-full mb-4 flex justify-between items-center">
                   <span className="text-gray-400">Owned by</span>
                   <a
-                    href={`https://etherscan.io/address/${item.metadata.owner}`}
+                    href={`https://sepolia.etherscan.io/${item.metadata.owner}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-400 hover:text-blue-300"
                   >
                     {item.owner === account
                       ? "You"
-                      : `${item.owner.slice(0, 6)}...${item.metadata.owner.slice(-4)}`}
+                      : `${item.owner.slice(
+                          0,
+                          6
+                        )}...${item.metadata.owner.slice(-4)}`}
                   </a>
                 </div>
-              </div>
 
-              {/* NFt Address */}
-              <div className="bg-[#ffffff10] p-4 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">NFT Address</span>
+                {/* Minting Hash */}
+                <div className="w-full mb-4 flex justify-between items-center">
+                  <span className="text-gray-400">Minting Hash</span>
                   <a
-                    href={`https://etherscan.io/address/${nft.target}`}
+                    href={`https://sepolia.etherscan.io/tx/${mintingHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-400 hover:text-blue-300"
                   >
-                    {item.owner === account
-                      ? "You"
-                      : `${item.owner.slice(0, 6)}...${nft.target.slice(-4)}`}
+                    {mintingHash.slice(0, 6)}...{mintingHash.slice(-4)}
+                  </a>
+                </div>
+
+                {/* NFt Address */}
+                <div className="w-full mb-4 flex justify-between items-center">
+                  <span className="text-gray-400">NFT Address</span>
+                  <a
+                    href={`https://sepolia.etherscan.io/address/${nft.target}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300"
+                  >
+                    {item.owner.slice(0, 6)}...{nft.target.slice(-4)}
                   </a>
                 </div>
               </div>
