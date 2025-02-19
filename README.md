@@ -92,7 +92,6 @@ This project is a decentralized NFT Marketplace built on the Ethereum blockchain
 - Auction System: Implement an auction system for NFTs.
 - User Profiles: Add user profiles to display owned and created NFTs.
 - Advanced Search: Enhance the search functionality with filters and sorting options.
-- Mobile Responsiveness: Improve the mobile responsiveness of the application.
 - Multi-Chain Support: Add support for multiple blockchain networks.
 
 ## Live Instance of the App
