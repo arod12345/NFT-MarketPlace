@@ -22,7 +22,6 @@ const NFTDetails = () => {
       setLoading(true);
       setError(null);
 
-      console.log(nft);
 
       if (!marketplace || !nft) {
         throw new Error("Contracts not loaded");
@@ -46,7 +45,6 @@ const NFTDetails = () => {
       );
       if (transferEvents.length > 0) {
         setMintingHash(transferEvents[0].transactionHash);
-        console.log("Minting Hash:", transferEvents[0].transactionHash);
       }
 
       setItem({
@@ -58,7 +56,6 @@ const NFTDetails = () => {
       });
       setLoading(false);
     } catch (error) {
-      console.error("Error loading item details:", error);
       setError(error.message);
     }
   };
@@ -81,7 +78,6 @@ const NFTDetails = () => {
       });
       navigate("/purchased");
     } catch (error) {
-      console.error("Error buying item:", error);
       toast.update(buyToast, {
         render: ` Erorr Purchasing ${item.name} NFT`,
         type: "error",

@@ -14,7 +14,7 @@ const ListedItems = () => {
   const loadListedItems = async () => {
     if (!marketplace || !account) return;
 
-    const itemCount = await marketplace.itemCount();
+    const itemCount = await marketplace.read.itemCount();
     let listedItems = [];
 
     for (let i = 1; i <= itemCount; i++) {

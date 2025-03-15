@@ -8,28 +8,30 @@ import PurchasedItems from "./pages/PurchasedItems";
 import PageNotFound from "./pages/PageNotFound";
 import { ToastContainer } from "react-toastify";
 
-function App() {
-  return (
-    <>
-      <ToastContainer
-        position="top-center"
-        autoClose={2000}
-        newestOnTop
-        hideProgressBar
-        draggable
-        theme="dark"
-      />
 
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/purchased" element={<PurchasedItems />} />
-          <Route path="/listed" element={<ListedItems />} />
-          <Route path="/create" element={<CreateNFT />} />
-          <Route path="/nft/:itemId" element={<NFTDetails />} />
-          <Route path="*" element={<PageNotFound />} />
-        </Routes>
-      </Router>
+function App() {
+  
+  return (
+   <>
+        <ToastContainer
+          position="top-center"
+          autoClose={2000}
+          newestOnTop
+          hideProgressBar
+          draggable
+          theme="dark"
+        />
+
+        <Router>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/purchased" element={<PurchasedItems />} />
+            <Route path="/listed" element={<ListedItems />} />
+            <Route path="/create" element={<CreateNFT />} />
+            <Route path="/nft/:itemId" element={<NFTDetails />} />
+            <Route path="*" element={<PageNotFound />} />
+          </Routes>
+        </Router>
     </>
   );
 }

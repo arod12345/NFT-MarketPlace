@@ -1,7 +1,18 @@
-import { createContext, useState } from "react";
+import { createContext, useState, useEffect } from "react";
 import axios from "axios";
-import { ethers } from "ethers";
+// import { ethers } from "ethers";
 import { toast } from "react-toastify";
+import {
+  useAccount,
+  useConnect,
+  useDisconnect,
+  // useWalletClient,
+  usePublicClient,
+} from "wagmi";
+import { getContract } from "viem";
+import  {} from "@wagmi/core"
+// import { getWalletClient } from "@wagmi/core";
+// import { getAccount,  } from "@wagmi/core";
 
 import MarketplaceAbi from "../contractsData/Marketplace.json";
 import MarketplaceAddress from "../contractsData/Marketplace-address.json";
@@ -12,50 +23,76 @@ const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const [generatedImage, setGeneratedImage] = useState("");
-  const [loading, setLoading] = useState(false); // New loading state
-  const [account, setAccount] = useState(null);
-  const [nft, setNFT] = useState({});
-  const [marketplace, setMarketplace] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [account, setAccount] = useState(null); // Keeping account variable
+  const [nft, setNFT] = useState(null);
+  const [marketplace, setMarketplace] = useState(null);
+  // const [signer, setSigner] = useState(null);
 
-  const web3Handler = async () => {
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    });
-    setAccount(accounts[0]);
+  // Wagmi hooks
+  const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
+  // const chainId = useChainId();
+  const publicClient = usePublicClient();
+  // const { data: walletClient } = useWalletClient();
 
-    const provider = new ethers.BrowserProvider(window.ethereum);
-
-    const signer = await provider.getSigner();
-
-    window.ethereum.on("chainChanged", (chainId) => {
-      window.location.reload();
-    });
-
-    window.ethereum.on("accountsChanged", async function (accounts) {
-      setAccount(accounts[0]);
-      await web3Handler();
-    });
-
-    loadContracts(signer);
-  };
-
-  const loadContracts = async (signer) => {
-    // Get deployed copies of contracts
-    const marketplace = new ethers.Contract(
-      MarketplaceAddress.address,
-      MarketplaceAbi.abi,
-      signer
+  useEffect(() => {
+    console.log(
+      "Effect triggered - isConnected:",
+      isConnected,
+      "address:",
+      address
     );
-    setMarketplace(marketplace);
-    const nft = new ethers.Contract(NFTAddress.address, NFTAbi.abi, signer);
+    if (isConnected && address) {
+      setAccount(address); // Sync wagmi address with account state
 
+      loadContracts();
+    } else {
+      setAccount(null);
+    }
+  }, [isConnected, address]);
+
+  // useEffect(() => {
+  //   if (walletClient) {
+  //     setSigner(walletClient);
+  //     console.log("Signer set:", walletClient);
+  //   } else {
+  //     console.warn("Wallet client is still null");
+  //   }
+  // }, [walletClient]);
+
+  const loadContracts = async () => {
+    // Get deployed copies of contracts
+    if (!publicClient) {
+      console.error("Public client is not available");
+      return;
+    }
+    console.log("isConnected:", isConnected);
+    console.log("Wallet Address:", address);
+
+    const marketplace = getContract({
+      address: MarketplaceAddress.address,
+      abi: MarketplaceAbi.abi,
+      client: publicClient,
+    });
+    setMarketplace(marketplace);
+
+    const nft = getContract({
+      address: NFTAddress.address,
+      abi: NFTAbi.abi,
+      client: publicClient,
+    });
     setNFT(nft);
+    console.log("Marketplace:", marketplace);
+    console.log("NFT:", nft);
     setLoading(false);
   };
 
   const fetchGeneratedImages = async (prompt) => {
-    setLoading(true); // Start loading
-    setGeneratedImage(""); // Clear previous image
+    setLoading(true);
+    setGeneratedImage("");
+
     try {
       const response = await axios.request({
         method: "POST",
@@ -69,18 +106,15 @@ export const AppProvider = ({ children }) => {
           prompt: prompt,
           style_id: 2,
           size: "1-1",
-          // width: 512,
-          // height: 512,
-          // steps: 1,
         },
       });
       setGeneratedImage(response.data?.final_result[0].origin);
       toast.success("Image Generated Successfully");
     } catch (error) {
       console.error("Error fetching image:", error);
-      toast.error("Image Genreration failed try again!!");
+      toast.error("Image Generation failed, try again!");
     }
-    setLoading(false); // Stop loading
+    setLoading(false);
   };
 
   return (
@@ -90,10 +124,14 @@ export const AppProvider = ({ children }) => {
         generatedImage,
         loading,
         setLoading,
-        account,
+        account, // Keeping account
+        address, // Wagmi connected wallet address
+        isConnected,
+        connect,
+        connectors,
+        disconnect,
         nft,
         marketplace,
-        web3Handler,
       }}
     >
       {children}

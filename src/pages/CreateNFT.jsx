@@ -7,6 +7,7 @@ import { ethers } from "ethers";
 import pinata from "../utils/pinata";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import {uploadToCloudinary} from "../utils/cloudniary"
 
 const CreateNFT = () => {
   const {
@@ -45,8 +46,13 @@ const CreateNFT = () => {
     }
 
     try {
+      console.log("Generated Image:", generatedImage);
+      
+      const cloudinaryUrl = await uploadToCloudinary(generatedImage);
+      toast.success("Image uploaded to Cloudinary!");
+
       const metadata = {
-        image: generatedImage,
+        image: cloudinaryUrl,
         name: NFTData.name,
         description: NFTData.description,
         price: NFTData.price,

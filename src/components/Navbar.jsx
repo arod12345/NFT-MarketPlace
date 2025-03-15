@@ -3,6 +3,7 @@ import Button from "./Button";
 import { useContext, useState } from "react";
 import AppContext from "../context/Context";
 import { FaBars, FaTimes } from "react-icons/fa";
+import ConnectButton from "./ConnectButton";
 
 const Navbar = () => {
   const { web3Handler, account } = useContext(AppContext);
@@ -33,20 +34,7 @@ const Navbar = () => {
         <Link to="/create" className="hover:text-blue-400 transition-colors">
           <li>Create Collection</li>
         </Link>
-        {account ? (
-          <a
-            href={`https://etherscan.io/address/${account}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="button nav-button btn-sm mx-4"
-          >
-            <Button
-              text={account.slice(0, 5) + "..." + account.slice(38, 42)}
-            />
-          </a>
-        ) : (
-          <Button event={web3Handler} text="Connect Wallet" />
-        )}
+        <ConnectButton />
       </ul>
 
       {/* Mobile Menu Button */}
@@ -98,30 +86,7 @@ const Navbar = () => {
             >
               <li>Create Collection</li>
             </Link>
-            {account ? (
-              <a
-                href={`https://etherscan.io/address/${account}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4"
-              >
-                <Button
-                  text={account.slice(0, 5) + "..." + account.slice(38, 42)}
-                  fullWidth
-                />
-              </a>
-            ) : (
-              <div className="mt-4">
-                <Button
-                  event={() => {
-                    web3Handler();
-                    toggleMobileMenu();
-                  }}
-                  text="Connect Wallet"
-                  fullWidth
-                />
-              </div>
-            )}
+            <ConnectButton />
           </ul>
         </div>
       </div>
