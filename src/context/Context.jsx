@@ -6,13 +6,14 @@ import {
   useAccount,
   useConnect,
   useDisconnect,
-  // useWalletClient,
+  useWalletClient,
+  useChainId,
   usePublicClient,
+  useReadContract
 } from "wagmi";
 import { getContract } from "viem";
-import  {} from "@wagmi/core"
-// import { getWalletClient } from "@wagmi/core";
-// import { getAccount,  } from "@wagmi/core";
+import { RPC_URLS, getClient } from "../config/rpc.config";
+import { writeContract } from "wagmi/actions";
 
 import MarketplaceAbi from "../contractsData/Marketplace.json";
 import MarketplaceAddress from "../contractsData/Marketplace-address.json";
@@ -29,12 +30,16 @@ export const AppProvider = ({ children }) => {
   const [marketplace, setMarketplace] = useState(null);
   // const [signer, setSigner] = useState(null);
 
+  console.log(RPC_URLS[31337])
+
   // Wagmi hooks
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
-  // const chainId = useChainId();
   const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
+
+  // console.log("fucckk",chainId)
   // const { data: walletClient } = useWalletClient();
 
   useEffect(() => {
@@ -47,41 +52,35 @@ export const AppProvider = ({ children }) => {
     if (isConnected && address) {
       setAccount(address); // Sync wagmi address with account state
 
-      loadContracts();
+      loadContracts(walletClient);
     } else {
       setAccount(null);
     }
-  }, [isConnected, address]);
+  }, [isConnected, address, walletClient]);
 
-  // useEffect(() => {
-  //   if (walletClient) {
-  //     setSigner(walletClient);
-  //     console.log("Signer set:", walletClient);
-  //   } else {
-  //     console.warn("Wallet client is still null");
-  //   }
-  // }, [walletClient]);
-
-  const loadContracts = async () => {
+  const loadContracts = async (walletClient) => {
     // Get deployed copies of contracts
     if (!publicClient) {
       console.error("Public client is not available");
       return;
     }
-    console.log("isConnected:", isConnected);
-    console.log("Wallet Address:", address);
+    const chainId =  await walletClient.getChainId();
+    console.log("chainId:", chainId);
+    console.log("Wallet Client", walletClient);
 
+    // Get the right client for the connected chain
+    // const client = getClient(chainId);
     const marketplace = getContract({
       address: MarketplaceAddress.address,
       abi: MarketplaceAbi.abi,
-      client: publicClient,
+      client: walletClient,
     });
     setMarketplace(marketplace);
 
     const nft = getContract({
       address: NFTAddress.address,
       abi: NFTAbi.abi,
-      client: publicClient,
+      client: walletClient,
     });
     setNFT(nft);
     console.log("Marketplace:", marketplace);

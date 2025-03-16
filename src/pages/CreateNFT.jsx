@@ -86,7 +86,7 @@ const CreateNFT = () => {
     try {
       // 1. Mint NFT
       toast.update(toastId, { render: "Minting NFT..." });
-      const mintTx = await nft.mint(metadataURI);
+      const mintTx = await nft.write.mint([metadataURI]);
       const mintReceipt = await mintTx.wait();
 
       // Extract token ID from mint event
@@ -97,16 +97,16 @@ const CreateNFT = () => {
 
       // 2. Approve Marketplace for specific token
       toast.update(toastId, { render: "Approving Marketplace..." });
-      const approveTx = await nft.approve(marketplace.target, tokenId);
+      const approveTx = await nft.write.approve([marketplace.address, tokenId]);
       await approveTx.wait();
 
       // 3. List Item
       toast.update(toastId, { render: "Listing NFT..." });
       const listingPrice = ethers.parseEther(NFTData.price.toString());
-      const listTx = await marketplace.makeItem(
-        nft.target,
+      const listTx = await marketplace.write.makeItem(
+       [ nft.address,
         tokenId,
-        listingPrice
+        listingPrice]
       );
       await listTx.wait();
 

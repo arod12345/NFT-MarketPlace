@@ -16,18 +16,18 @@ const Home = () => {
 
   const loadMarketplaceItems = async () => {
     // Load all unsold items
-    const itemCount = await marketplace.itemCount();
+    const itemCount = await marketplace.read.itemCount();
     let items = [];
     for (let i = 1; i <= itemCount; i++) {
-      const item = await marketplace.items(i);
+      const item = await marketplace.read.items([i]);
       if (!item.sold) {
         // get uri url from nft contract
-        const uri = await nft.tokenURI(item.tokenId);
+        const uri = await nft.read.tokenURI([item.tokenId]);
         // use uri to fetch the nft metadata stored on ipfs
         const response = await fetch(uri);
         const metadata = await response.json();
         // get total price of item (item price + fee)
-        const totalPrice = await marketplace.getTotalPrice(item.itemId);
+        const totalPrice = await marketplace.read.getTotalPrice([item.itemId]);
         // Add item to items array
         items.push({
           totalPrice,
@@ -48,7 +48,7 @@ const Home = () => {
     const buyToast = toast.loading(`Purcahsing ${item.name} NFT  ..`);
 
     try {
-      const tx = await marketplace.purchaseItem(item.itemId, {
+      const tx = await marketplace.write.purchaseItem([item.itemId], {
         value: item.totalPrice,
       });
       await tx.wait();

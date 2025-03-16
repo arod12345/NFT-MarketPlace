@@ -17,7 +17,7 @@ module.exports = {
   },
   networks: {
     sepolia: {
-      url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMEY_API_KEY}`,
+      url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.VITE_ALCHEMEY_API_KEY}`,
       accounts: [`${process.env.PRIVATE_KEY}`],
       chainId: 11155111,
     },

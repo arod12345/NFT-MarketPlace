@@ -18,7 +18,7 @@ const ListedItems = () => {
     let listedItems = [];
 
     for (let i = 1; i <= itemCount; i++) {
-      const item = await marketplace.items(i);
+      const item = await marketplace.read.items([i]);
       if (!item.sold && item.seller.toLowerCase() === account.toLowerCase()) {
         try {
           const uri = await nft.tokenURI(item.tokenId);
@@ -26,7 +26,7 @@ const ListedItems = () => {
           const metadata = await response.json();
 
           // get total price of item (item price + fee)
-          const totalPrice = await marketplace.getTotalPrice(item.itemId);
+          const totalPrice = await marketplace.read.getTotalPrice([item.itemId]);
 
           listedItems.push({
             itemId: item.itemId,
