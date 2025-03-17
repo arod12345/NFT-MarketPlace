@@ -14,21 +14,31 @@ const PurchasedItems = () => {
   const loadPurchasedItems = async () => {
     if (!marketplace || !nft || !account) return;
 
-    const itemCount = await marketplace.itemCount();
+    const itemCount = await marketplace.read.itemCount();
     let purchasedItems = [];
 
     for (let i = 1; i <= itemCount; i++) {
-      const item = await marketplace.items(i);
+      const itemData = await marketplace.read.items([i]);
+
+      const item = {
+        itemId: itemData[0].toString(),
+        nft: itemData[1],
+        tokenId: itemData[2].toString(),
+        price: itemData[3].toString(),
+        seller: itemData[4],
+        sold: itemData[5],
+      };
+      
       if (item.sold) {
         try {
-          const owner = await nft.ownerOf(item.tokenId);
+          const owner = await nft.read.ownerOf([item.tokenId]);
           if (owner.toLowerCase() === account.toLowerCase()) {
-            const uri = await nft.tokenURI(item.tokenId);
+            const uri = await nft.read.tokenURI([item.tokenId]);
             const response = await fetch(uri);
             const metadata = await response.json();
 
             // get total price of item (item price + fee)
-            const totalPrice = await marketplace.getTotalPrice(item.itemId);
+            const totalPrice = await marketplace.read.getTotalPrice([item.itemId]);
 
             purchasedItems.push({
               itemId: item.itemId,

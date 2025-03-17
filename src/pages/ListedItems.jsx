@@ -2,7 +2,7 @@ import Navbar from "../components/Navbar";
 import Card from "../components/Card";
 import Spinner from "../components/Spinner";
 import Footer from "../components/Footer";
-import Error from "../components/Error"
+import Error from "../components/Error";
 import { useContext, useState, useEffect } from "react";
 import AppContext from "../context/Context";
 
@@ -18,15 +18,26 @@ const ListedItems = () => {
     let listedItems = [];
 
     for (let i = 1; i <= itemCount; i++) {
-      const item = await marketplace.read.items([i]);
+      const itemData = await marketplace.read.items([i]);
+      const item = {
+        itemId: itemData[0].toString(),
+        nft: itemData[1],
+        tokenId: itemData[2].toString(),
+        price: itemData[3].toString(),
+        seller: itemData[4],
+        sold: itemData[5],
+      };
+
       if (!item.sold && item.seller.toLowerCase() === account.toLowerCase()) {
         try {
-          const uri = await nft.tokenURI(item.tokenId);
+          const uri = await nft.read.tokenURI([item.tokenId]);
           const response = await fetch(uri);
           const metadata = await response.json();
 
           // get total price of item (item price + fee)
-          const totalPrice = await marketplace.read.getTotalPrice([item.itemId]);
+          const totalPrice = await marketplace.read.getTotalPrice([
+            item.itemId,
+          ]);
 
           listedItems.push({
             itemId: item.itemId,
@@ -51,13 +62,15 @@ const ListedItems = () => {
   }, [marketplace, account]);
 
   if (!account) {
-    return <Error message="Please connect your wallet to view marketplace items" />  
+    return (
+      <Error message="Please connect your wallet to view marketplace items" />
+    );
   }
 
   return (
     <div className="w-full min-h-screen flex flex-col">
       <Navbar />
-      
+
       {/* Main Content Area */}
       <div className="flex-grow p-4 sm:p-8">
         {/* Grid Container */}
@@ -68,7 +81,7 @@ const ListedItems = () => {
             </div>
           ) : items.length > 0 ? (
             items.map((item, idx) => (
-                <Card key={idx} item={item} isListed={true} />
+              <Card key={idx} item={item} isListed={true} />
             ))
           ) : (
             <div className="col-span-full flex justify-center items-center h-[50vh]">
@@ -79,7 +92,7 @@ const ListedItems = () => {
           )}
         </div>
       </div>
-  
+
       <Footer />
     </div>
   );

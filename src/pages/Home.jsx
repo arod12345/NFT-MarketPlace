@@ -7,9 +7,10 @@ import { useContext, useState, useEffect } from "react";
 import AppContext from "../context/Context";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { waitForTransactionReceipt} from "wagmi/actions";
 
 const Home = () => {
-  const { marketplace, nft, account } = useContext(AppContext);
+  const { marketplace, nft, account,walletClient } = useContext(AppContext);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -19,7 +20,17 @@ const Home = () => {
     const itemCount = await marketplace.read.itemCount();
     let items = [];
     for (let i = 1; i <= itemCount; i++) {
-      const item = await marketplace.read.items([i]);
+      const itemData = await marketplace.read.items([i]);
+
+      const item = {
+        itemId: itemData[0].toString(),
+        nft: itemData[1],
+        tokenId: itemData[2].toString(),
+        price: itemData[3].toString(),
+        seller: itemData[4],
+        sold: itemData[5],
+      };
+
       if (!item.sold) {
         // get uri url from nft contract
         const uri = await nft.read.tokenURI([item.tokenId]);
@@ -51,7 +62,7 @@ const Home = () => {
       const tx = await marketplace.write.purchaseItem([item.itemId], {
         value: item.totalPrice,
       });
-      await tx.wait();
+      await waitForTransactionReceipt(walletClient, { hash: tx });
       toast.update(buyToast, {
         render: `Purchased  ${item.name} NFT Successfully!`,
         type: "success",

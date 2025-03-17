@@ -7,13 +7,9 @@ import {
   useConnect,
   useDisconnect,
   useWalletClient,
-  useChainId,
-  usePublicClient,
-  useReadContract
+  usePublicClient
 } from "wagmi";
 import { getContract } from "viem";
-import { RPC_URLS, getClient } from "../config/rpc.config";
-import { writeContract } from "wagmi/actions";
 
 import MarketplaceAbi from "../contractsData/Marketplace.json";
 import MarketplaceAddress from "../contractsData/Marketplace-address.json";
@@ -28,9 +24,6 @@ export const AppProvider = ({ children }) => {
   const [account, setAccount] = useState(null); // Keeping account variable
   const [nft, setNFT] = useState(null);
   const [marketplace, setMarketplace] = useState(null);
-  // const [signer, setSigner] = useState(null);
-
-  console.log(RPC_URLS[31337])
 
   // Wagmi hooks
   const { address, isConnected } = useAccount();
@@ -39,16 +32,7 @@ export const AppProvider = ({ children }) => {
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
 
-  // console.log("fucckk",chainId)
-  // const { data: walletClient } = useWalletClient();
-
   useEffect(() => {
-    console.log(
-      "Effect triggered - isConnected:",
-      isConnected,
-      "address:",
-      address
-    );
     if (isConnected && address) {
       setAccount(address); // Sync wagmi address with account state
 
@@ -65,8 +49,7 @@ export const AppProvider = ({ children }) => {
       return;
     }
     const chainId =  await walletClient.getChainId();
-    console.log("chainId:", chainId);
-    console.log("Wallet Client", walletClient);
+   
 
     // Get the right client for the connected chain
     // const client = getClient(chainId);
@@ -83,8 +66,6 @@ export const AppProvider = ({ children }) => {
       client: walletClient,
     });
     setNFT(nft);
-    console.log("Marketplace:", marketplace);
-    console.log("NFT:", nft);
     setLoading(false);
   };
 
@@ -131,6 +112,7 @@ export const AppProvider = ({ children }) => {
         disconnect,
         nft,
         marketplace,
+        walletClient
       }}
     >
       {children}

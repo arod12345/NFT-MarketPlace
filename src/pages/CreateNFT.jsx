@@ -7,7 +7,9 @@ import { ethers } from "ethers";
 import pinata from "../utils/pinata";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import {uploadToCloudinary} from "../utils/cloudniary"
+import { uploadToCloudinary } from "../utils/cloudniary";
+import { waitForTransactionReceipt } from "viem/actions";
+import { parseEventLogs } from "viem";
 
 const CreateNFT = () => {
   const {
@@ -17,6 +19,7 @@ const CreateNFT = () => {
     account,
     marketplace,
     nft,
+    walletClient,
   } = useContext(AppContext);
   const [promptData, setPromptData] = useState("");
   const [NFTData, setNFTData] = useState({
@@ -46,8 +49,7 @@ const CreateNFT = () => {
     }
 
     try {
-      console.log("Generated Image:", generatedImage);
-      
+
       const cloudinaryUrl = await uploadToCloudinary(generatedImage);
       toast.success("Image uploaded to Cloudinary!");
 
@@ -87,28 +89,34 @@ const CreateNFT = () => {
       // 1. Mint NFT
       toast.update(toastId, { render: "Minting NFT..." });
       const mintTx = await nft.write.mint([metadataURI]);
-      const mintReceipt = await mintTx.wait();
+      const mintReceipt = await waitForTransactionReceipt(walletClient, {
+        hash: mintTx,
+      });
+
 
       // Extract token ID from mint event
-      const mintEvent = mintReceipt.logs.find(
-        (log) => log.fragment?.name === "Transfer"
-      );
-      const tokenId = mintEvent.args[2].toString();
+      const mintEvents = parseEventLogs({
+        abi: nft.abi, // Ensure you have the correct ABI
+        logs: mintReceipt.logs,
+        eventName: "Transfer", // Look for Transfer events
+      });
+
+      const tokenId = mintEvents[0].args.tokenId.toString();
 
       // 2. Approve Marketplace for specific token
       toast.update(toastId, { render: "Approving Marketplace..." });
       const approveTx = await nft.write.approve([marketplace.address, tokenId]);
-      await approveTx.wait();
+      await waitForTransactionReceipt(walletClient, { hash: approveTx });
 
       // 3. List Item
       toast.update(toastId, { render: "Listing NFT..." });
       const listingPrice = ethers.parseEther(NFTData.price.toString());
-      const listTx = await marketplace.write.makeItem(
-       [ nft.address,
+      const listTx = await marketplace.write.makeItem([
+        nft.address,
         tokenId,
-        listingPrice]
-      );
-      await listTx.wait();
+        listingPrice,
+      ]);
+      await waitForTransactionReceipt(walletClient, { hash: listTx });
 
       toast.update(toastId, {
         render: "NFT Created & Listed Successfully!",
@@ -148,39 +156,66 @@ const CreateNFT = () => {
             onSubmit={(e) => e.preventDefault()}
             className="flex p-2 mb-4 rounded w-full md:w-[55%] flex-col"
           >
-            <input
-              id="NFT Name"
-              name="name"
-              type="text"
-              placeholder="Enter NFT Name"
-              className="border-[.1px] border-[#ffffff30] mb-4 p-2 rounded w-full"
-              required
-              value={NFTData.name}
-              onChange={(e) => setNFTData({ ...NFTData, name: e.target.value })}
-            />
-            <textarea
-              id="description"
-              name="description"
-              placeholder="Enter NFT description"
-              className="border-[.1px] border-[#ffffff30] mb-4 p-2 rounded w-full"
-              required
-              value={NFTData.description}
-              onChange={(e) =>
-                setNFTData({ ...NFTData, description: e.target.value })
-              }
-            ></textarea>
-            <input
-              id="Price"
-              name="Price"
-              type="number"
-              placeholder="Enter NFT price"
-              className="border-[.1px] border-[#ffffff30] mb-8 p-2 rounded w-full"
-              required
-              value={NFTData.price}
-              onChange={(e) =>
-                setNFTData({ ...NFTData, price: e.target.value })
-              }
-            />
+            <div className="flex flex-col md:flex-row my-1 relative rounded items-center gap-2 md:gap-4">
+              <label
+                htmlFor="NFT Name"
+                className="text-white text-[12px] ml-5 absolute top-[-7.5px] bg-[#131313] px-1"
+              >
+                NFT Name
+              </label>
+              <input
+                id="NFT Name"
+                name="name"
+                type="text"
+                placeholder="Enter NFT Name"
+                className="border-[.1px] border-[#ffffff30] mb-4 p-2 rounded w-full"
+                required
+                value={NFTData.name}
+                onChange={(e) =>
+                  setNFTData({ ...NFTData, name: e.target.value })
+                }
+              />
+            </div>
+            <div className="flex flex-col md:flex-row my-1 relative rounded items-center gap-2 md:gap-4">
+              <label
+                htmlFor="description"
+                className="text-white text-[12px] ml-5 absolute top-[-7.5px] bg-[#131313] px-1"
+              >
+                NFT Description
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                placeholder="Enter NFT description"
+                className="border-[.1px] border-[#ffffff30] mb-4 p-2 rounded w-full"
+                required
+                value={NFTData.description}
+                onChange={(e) =>
+                  setNFTData({ ...NFTData, description: e.target.value })
+                }
+              ></textarea>
+            </div>
+
+            <div className="flex flex-col md:flex-row my-1 relative rounded items-center gap-2 md:gap-4">
+              <label
+                htmlFor="Price"
+                className="text-white text-[12px] ml-5 absolute top-[-7.5px] bg-[#131313] px-1"
+              >
+                NFT price in ETH
+              </label>
+              <input
+                id="Price"
+                name="Price"
+                type="number"
+                placeholder="Enter NFT price"
+                className="border-[.1px] border-[#ffffff30] mb-8 p-2 rounded w-full"
+                required
+                value={NFTData.price}
+                onChange={(e) =>
+                  setNFTData({ ...NFTData, price: e.target.value })
+                }
+              />
+            </div>
 
             <div className="flex flex-col md:flex-row border-[.1px] border-[#ffffff30] relative rounded p-6 items-center gap-2 md:gap-4">
               <label
@@ -200,7 +235,7 @@ const CreateNFT = () => {
                 required
               ></textarea>
               <button
-                className="p-2 bg-blue-500 text-white rounded disabled:bg-gray-400 w-full md:w-auto"
+                className="p-2 bg-blue-500 text-white cursor-pointer rounded disabled:bg-gray-400 w-full md:w-auto"
                 disabled={loading}
                 onClick={() => fetchGeneratedImages(promptData)}
               >

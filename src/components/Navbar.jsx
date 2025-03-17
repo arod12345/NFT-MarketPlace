@@ -1,12 +1,9 @@
 import { Link } from "react-router-dom";
-import Button from "./Button";
-import { useContext, useState } from "react";
-import AppContext from "../context/Context";
+import { useState } from "react";
 import { FaBars, FaTimes } from "react-icons/fa";
 import ConnectButton from "./ConnectButton";
 
 const Navbar = () => {
-  const { web3Handler, account } = useContext(AppContext);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => {

@@ -7,10 +7,13 @@ import AppContext from "../context/Context";
 import { ethers } from "ethers";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { waitForTransactionReceipt } from "wagmi/actions";
+// import { getContractEvents } from "viem/actions";
+// import {getContract,parseAbi} from  "viem"
 
 const NFTDetails = () => {
   const { itemId } = useParams();
-  const { marketplace, nft, account } = useContext(AppContext);
+  const { marketplace, nft, account, walletClient } = useContext(AppContext);
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,37 +25,44 @@ const NFTDetails = () => {
       setLoading(true);
       setError(null);
 
-
       if (!marketplace || !nft) {
         throw new Error("Contracts not loaded");
       }
 
-      const itemData = await marketplace.items(itemId);
+      const items= await marketplace.read.items([itemId]);
+
+      console.log(items)
+
+      const itemData = {
+        // itemId: items[0].toString(),
+        nft: items[1],
+        tokenId: items[2].toString(),
+        price: items[3].toString(),
+        seller: items[4],
+        sold: items[5],
+      };
 
       if (!itemData) {
         throw new Error("Item not found");
       }
 
-      const uri = await nft.tokenURI(itemData.tokenId);
+      const uri = await nft.read.tokenURI([itemData.tokenId]);
       const metadataResponse = await fetch(uri);
       const metadata = await metadataResponse.json();
 
-      const owner = await nft.ownerOf(itemData.tokenId);
+      console.log(metadata);
+
+      const owner = await nft.read.ownerOf([itemData.tokenId]);
       const isOwner = metadata.owner.toLowerCase() === account.toLowerCase();
+      
 
-      const transferEvents = await nft.queryFilter(
-        nft.filters.Transfer(null, owner)
-      );
-      if (transferEvents.length > 0) {
-        setMintingHash(transferEvents[0].transactionHash);
-      }
-
+      
       setItem({
         ...itemData,
         metadata,
         owner,
         isOwner,
-        totalPrice: await marketplace.getTotalPrice(itemId),
+        totalPrice: await marketplace.read.getTotalPrice([itemId]),
       });
       setLoading(false);
     } catch (error) {
@@ -66,12 +76,12 @@ const NFTDetails = () => {
     const buyToast = toast.loading(`Purcahsing ${item.name} NFT  ..`);
 
     try {
-      const tx = await marketplace.purchaseItem(item.itemId, {
+      const tx = await marketplace.write.purchaseItem([itemId], {
         value: item.totalPrice,
       });
-      await tx.wait();
+      await waitForTransactionReceipt(walletClient, { hash: tx });
       toast.update(buyToast, {
-        render: `Purchased  ${item.name} NFT Successfully!`,
+        render: `Purchased ${item.name} NFT Successfully!`,
         type: "success",
         isLoading: false,
         autoClose: 5000,
@@ -178,7 +188,7 @@ const NFTDetails = () => {
                 </div>
 
                 {/* Minting Hash */}
-                <div className="w-full mb-4 flex justify-between items-center">
+                {/* <div className="w-full mb-4 flex justify-between items-center">
                   <span className="text-gray-400">Minting Hash</span>
                   <a
                     href={`https://sepolia.etherscan.io/tx/${mintingHash}`}
@@ -188,18 +198,18 @@ const NFTDetails = () => {
                   >
                     {mintingHash.slice(0, 6)}...{mintingHash.slice(-4)}
                   </a>
-                </div>
+                </div> */}
 
                 {/* NFt Address */}
                 <div className="w-full mb-4 flex justify-between items-center">
                   <span className="text-gray-400">NFT Address</span>
                   <a
-                    href={`https://sepolia.etherscan.io/address/${nft.target}`}
+                    href={`https://sepolia.etherscan.io/address/${nft.address}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-400 hover:text-blue-300"
                   >
-                    {item.owner.slice(0, 6)}...{nft.target.slice(-4)}
+                    {item.owner.slice(0, 6)}...{nft.address.slice(-4)}
                   </a>
                 </div>
               </div>
