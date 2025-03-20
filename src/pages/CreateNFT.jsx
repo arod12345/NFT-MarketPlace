@@ -27,6 +27,7 @@ const CreateNFT = () => {
     description: "",
     price: "",
   });
+  const [disable,setDisable]=useState(false)
   const navigate = useNavigate();
 
   const validateInputs = () => {
@@ -51,7 +52,7 @@ const CreateNFT = () => {
     try {
 
       const cloudinaryUrl = await uploadToCloudinary(generatedImage);
-      toast.success("Image uploaded to Cloudinary!");
+      toast.success("Image uploaded Succesfully!");
 
       const metadata = {
         image: cloudinaryUrl,
@@ -82,7 +83,7 @@ const CreateNFT = () => {
     if (!nft || !marketplace) {
       throw new Error("Contracts not initialized");
     }
-
+    setDisable(true)
     const toastId = toast.loading("Starting NFT creation process...");
 
     try {
@@ -117,7 +118,7 @@ const CreateNFT = () => {
         listingPrice,
       ]);
       await waitForTransactionReceipt(walletClient, { hash: listTx });
-
+      setDisable(false)
       toast.update(toastId, {
         render: "NFT Created & Listed Successfully!",
         type: "success",
@@ -244,7 +245,7 @@ const CreateNFT = () => {
             </div>
             <button
               className="p-2 mt-4 bg-blue-500 text-white rounded cursor-pointer disabled:bg-gray-400 w-full"
-              disabled={loading}
+              disabled={disable}
               onClick={createNFT}
             >
               Create NFT

@@ -48,7 +48,7 @@ export const AppProvider = ({ children }) => {
       console.error("Public client is not available");
       return;
     }
-    const chainId =  await walletClient.getChainId();
+    // const chainId =  await walletClient.getChainId();
    
 
     // Get the right client for the connected chain
@@ -83,13 +83,14 @@ export const AppProvider = ({ children }) => {
           "Content-Type": "application/json",
         },
         data: {
-          prompt: prompt,
-          style_id: 2,
-          size: "1-1",
+          text: prompt,
+          width: 512,
+          height: 512,
+          steps: 1
         },
       });
-      setGeneratedImage(response.data?.final_result[0].origin);
-      toast.success("Image Generated Successfully");
+      setGeneratedImage(response.data?.generated_image);
+      toast.success("Image Generated Successfully",);
     } catch (error) {
       console.error("Error fetching image:", error);
       toast.error("Image Generation failed, try again!");

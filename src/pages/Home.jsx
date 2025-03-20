@@ -7,13 +7,14 @@ import { useContext, useState, useEffect } from "react";
 import AppContext from "../context/Context";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { waitForTransactionReceipt} from "wagmi/actions";
+import { waitForTransactionReceipt } from "wagmi/actions";
 
 const Home = () => {
-  const { marketplace, nft, account,walletClient } = useContext(AppContext);
+  const { marketplace, nft, account, walletClient } = useContext(AppContext);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
 
   const loadMarketplaceItems = async () => {
     // Load all unsold items
@@ -62,7 +63,7 @@ const Home = () => {
       const tx = await marketplace.write.purchaseItem([item.itemId], {
         value: item.totalPrice,
       });
-      await waitForTransactionReceipt(walletClient, { hash: tx });
+      await waitForTransactionReceipt(walletClient,{hash: tx });
       toast.update(buyToast, {
         render: `Purchased  ${item.name} NFT Successfully!`,
         type: "success",
