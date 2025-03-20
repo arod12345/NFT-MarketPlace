@@ -8,7 +8,11 @@ node :; npx hardhat node
 
 build :;npm run deploy && npm run build && npm run preview
 
-verify :; npx hardhat verify --network mainnet 
+verify-NFT :; npx hardhat verify --network sepolia 0x2906DEbC139f8334c37a58bCC888EdA87D854B3d 
+
+verfiy-Marketplace :; npx hardhat verify --network sepolia 0x07E51342511b6d7ce815D1EE8C8A7E6F0003308A "1"
+
+verfiy-All :; make verify-NFT && make verfiy-Marketplace
 
 test :; npx hardhat test backend/test/NFTMarketplace.test.js
 
